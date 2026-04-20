@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>СтройАналитика | Аналитика спроса стройматериалов</title>
+    <!-- Подключаем внешние стили -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+
+<!-- Модальное окно для входа / регистрации -->
+<div id="authModal" class="auth-overlay">
+    <div class="auth-card">
+        <h2><i class="fas fa-chart-line"></i> СтройАналитика</h2>
+        <div id="loginForm">
+            <input type="text" id="loginUsername" placeholder="Логин" autocomplete="off">
+            <input type="password" id="loginPassword" placeholder="Пароль">
+            <button id="doLoginBtn"><i class="fas fa-sign-in-alt"></i> Войти</button>
+            <button type="button" id="showRegisterBtn" class="switch-btn">📝 Нет аккаунта? Зарегистрироваться</button>
+            <div id="loginError" class="error-msg"></div>
+        </div>
+        <div id="registerForm" style="display:none;">
+            <input type="text" id="regFullname" placeholder="ФИО / Компания">
+            <input type="text" id="regUsername" placeholder="Логин">
+            <input type="password" id="regPassword" placeholder="Пароль">
+            <select id="regRole">
+                <option value="client">Клиент (заявки на материалы)</option>
+                <option value="manager">Менеджер (прогнозы + заявки)</option>
+                <option value="analyst">Аналитик (полный доступ)</option>
+            </select>
+            <button id="doRegisterBtn">Зарегистрироваться</button>
+            <button type="button" id="showLoginBtn" class="switch-btn">← Назад к входу</button>
+            <div id="regError" class="error-msg"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Основное приложение -->
+<div id="appMain" class="app-container">
+    <div class="top-bar">
+        <h1><i class="fas fa-chart-line"></i> СтройАналитика</h1>
+        <div class="user-info">
+            <span id="userNameSpan"></span>
+            <span id="userRoleSpan" class="role-badge"></span>
+            <button id="logoutBtn" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Выйти</button>
+        </div>
+    </div>
+
+    <!-- Панель клиента -->
+    <div id="clientPanel" style="display:none;">
+        <div class="card">
+            <div class="card-header"><h2><i class="fas fa-box-open"></i> Доступные материалы</h2><span class="badge">Оформите заявку</span></div>
+            <div class="table-responsive">
+                <table id="clientStockTable">
+                    <thead><tr><th>Товар</th><th>В наличии (шт)</th><th>Цена (₽)</th><th>Количество</th><th></th></tr></thead>
+                    <tbody id="clientTbody"></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header"><h2><i class="fas fa-history"></i> Мои заявки</h2></div>
+            <div class="table-responsive">
+                <table id="clientRequestsTable">
+                    <thead><tr><th>Дата</th><th>Товар</th><th>Кол-во</th><th>Сумма</th><th>Статус</th></tr></thead>
+                    <tbody id="clientRequestsTbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Панель менеджера -->
+    <div id="managerPanel" style="display:none;">
+        <div class="card">
+            <div class="card-header"><h2><i class="fas fa-chart-line"></i> Прогноз остатков и дефицита</h2></div>
+            <div class="control-panel">
+                <select id="seasonMonthSelectMgr"><option value="3">Апрель</option><option value="4">Май</option><option value="5">Июнь</option></select>
+                <button id="refreshForecastMgr"><i class="fas fa-sync"></i> Обновить</button>
+            </div>
+            <div class="table-responsive"><table id="forecastTableMgr"><thead><tr><th>Товар</th><th>Остаток</th><th>Заявки</th><th>Продажи/день</th><th>Дней до 0</th><th>Рекомендация</th></tr></thead><tbody id="forecastMgrTbody"></tbody></table></div>
+        </div>
+        <div class="card">
+            <div class="card-header"><h2><i class="fas fa-chart-pie"></i> ABC/XYZ анализ</h2></div>
+            <div class="table-responsive"><table id="abcMgrTable"><thead><tr><th>Товар</th><th>Выручка</th><th>ABC</th><th>XYZ</th><th>Стратегия</th></tr></thead><tbody id="abcMgrTbody"></tbody></table></div>
+        </div>
+        <div class="card">
+            <div class="card-header"><h2><i class="fas fa-clipboard-list"></i> Новые заявки клиентов</h2></div>
+            <div class="table-responsive"><table id="managerRequestsTable"><thead><tr><th>Клиент</th><th>Товар</th><th>Кол-во</th><th>Сумма</th><th>Дата</th><th>Статус</th></tr></thead><tbody id="managerRequestsTbody"></tbody><tr></div>
+        </div>
+    </div>
+
+    <!-- Панель аналитика -->
+    <div id="analystPanel" style="display:none;">
+        <div class="card"><div class="card-header"><h2><i class="fas fa-chart-line"></i> Прогноз дефицита</h2></div>
+            <div class="control-panel"><select id="seasonMonthAnalyst"><option value="3">Апрель</option><option value="4">Май</option></select><button id="refreshAnalyst">Обновить</button></div>
+            <div class="table-responsive"><table id="analystForecastTable"><thead><tr><th>Товар</th><th>Остаток</th><th>Заявки</th><th>Дней до 0</th><th>Риск</th></tr></thead><tbody id="analystForecastTbody"></tbody></table></div>
+        </div>
+        <div class="card"><div class="card-header"><h2><i class="fas fa-chart-pie"></i> ABC/XYZ детальный</h2></div>
+            <div class="table-responsive"><table id="analystAbcTable"><thead><tr><th>Товар</th><th>Выручка</th><th>ABC</th><th>CV</th><th>XYZ</th><th>Рекомендация</th></tr></thead><tbody id="analystAbcTbody"></tbody></table></div>
+        </div>
+        <div class="card"><div class="card-header"><h2><i class="fas fa-tags"></i> Ценовая эластичность</h2></div>
+            <select id="analystElasticSelect" style="width:100%; padding:12px; border-radius:40px; margin-bottom:12px;"></select>
+            <input type="range" id="analystPriceSlider" min="0" max="5000" step="50" style="width:100%; margin:15px 0;">
+            <div class="elasticity-stats">
+                <div class="stat-card"><span id="analystBaseDemand">—</span><br>Базовый спрос</div>
+                <div class="stat-card"><span id="analystNewDemand">—</span><br>Новый спрос</div>
+                <div class="stat-card"><span id="analystDelta">—</span><br>Изменение</div>
+                <div class="stat-card"><span id="analystElasticVal">—</span><br>Эластичность</div>
+            </div>
+            <canvas id="analystChart"></canvas>
+        </div>
+    </div>
+    <footer>📱 Клиент → заявки на материалы. Менеджер → прогнозы + заявки. Аналитик → полный спектр + эластичность.</footer>
+</div>
+
+<!-- Подключаем основной скрипт -->
+<script src="script.js"></script>
+</body>
+</html>
